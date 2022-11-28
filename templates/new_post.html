@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Новая запись{% endblock %}
+{% block header %}Новая запись{% endblock %}
+{% block content %}
+    <form method="post">
+        {% csrf_token %}
+        <table>
+            {{ form }}
+        </table>
+        <input type="submit" value="Отправить" />
+    </form>
+{% endblock %}
