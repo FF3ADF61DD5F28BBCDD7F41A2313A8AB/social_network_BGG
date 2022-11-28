@@ -173,9 +173,9 @@ class TestGroupView:
             'Отредактируйте HTML-шаблон, не найден тег закрытия цикла'
 
         assert re.search(
-            r'<\s*title\s*>\s*Записи\s+сообщества\s+' + group.title + r'\s+\|\s+BGG\s*<\s*\/title\s*>',
+            r'<\s*title\s*>\s*Записи\s+сообщества\s+' + group.title + r'\s+\|\s+Yatube\s*<\s*\/title\s*>',
             html
-        ), 'Отредактируйте HTML-шаблон, не найдено название страницы `<title>Записи сообщества {{ название_группы }} | BGG</title>`'
+        ), 'Отредактируйте HTML-шаблон, не найдено название страницы `<title>Записи сообщества {{ название_группы }} | Yatube</title>`'
         assert re.search(
             r'<\s*h1\s*>\s*' + group.title + r'\s*<\s*\/h1\s*>',
             html
@@ -189,8 +189,3 @@ class TestGroupView:
             r'<\s*p(\s+class=".+"|\s*)>\s*' + post_with_group.text + r'\s*<\s*\/p\s*>',
             html
         ), 'Отредактируйте HTML-шаблон, не найден текст поста `<p>{{ текст_поста }}</p>`'
-
-        assert re.search(
-            r'(д|Д)ата публикации:\s*' + post_with_group.pub_date.strftime('%d %b %Y'),
-            html
-        ), 'Отредактируйте HTML-шаблон, не найдена дата публикации `дата публикации: {{ дата_публикации|date:"d M Y" }}`'
