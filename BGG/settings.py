@@ -25,12 +25,19 @@ SECRET_KEY = 'django-insecure-j@8^rc065x@g1m#i56j=-t!-)16i#__i)8@r!2t0dbt#40($5m
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "[::1]",
+    "testserver",
+]
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'django.contrib.sites',
+    'django.contrib.flatpages',
     'users',
     'posts',
     'debug_toolbar',
@@ -124,7 +131,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-LOGIN_URL = '/auth/login'
+LOGIN_URL = '/auth/login/'
 
 LOGIN_REDIRECT_URL = 'index'
 
@@ -142,3 +149,5 @@ INTERNAL_IPS = ['127.0.0.1']
 EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
 
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, "sent_emails")
+
+SITE_ID = 1
