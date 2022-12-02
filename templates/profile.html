@@ -32,36 +32,40 @@
         <div class="col-md-9">
             <div class="card mb-3 mt-1 shadow-sm">
                 {% for post in page %}
-                    <div class="card-body">
-                        <p class="card-text">
-                            <!-- Ссылка на страницу автора в атрибуте href; username автора в тексте ссылки -->
-                            <a href="/{{ user }}/"><strong class="d-block text-gray-dark">@{{ user }}</strong></a>
-                            <!-- Текст поста -->
-                            {{ post.text|linebreaksbr}}
-                        </p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="btn-group ">
-                                <!-- Ссылка на страницу записи в атрибуте href-->
-                                <a class="btn btn-sm text-muted" href="/{{user}}/{{forloop.counter0|add:page.start_index }}/" role="button">Добавить комментарий</a>
-                                <!-- Ссылка на редактирование, показывается только автору записи -->
-                                {% if request.user == post.author %}
-                                    <a class="btn btn-sm text-muted" href="/{{user}}/{{forloop.counter0|add:page.start_index }}/edit" role="button">Редактировать</a>
-                                {% endif %}
-                            </div>
-                            <!-- Дата публикации  -->
-                            <small class="text-muted">{{ post.pub_date|date:"d M Y H:m" }}</small>
-                        </div>
-                        {% if not forloop.last %}<hr>{% endif %}
-                    </div>
-                    {% empty %}
-                    <p class="card-body">
-                        Постов не найдено.
+                    {% load thumbnail %}
+                    {% thumbnail post.image "960" crop="center" upscale=True as im %}
+                    <img class="card-img" src="{{ im.url }}">
+                {% endthumbnail %}
+                <div class="card-body">
+                    <p class="card-text">
+                        <!-- Ссылка на страницу автора в атрибуте href; username автора в тексте ссылки -->
+                        <a href="/{{ user }}/"><strong class="d-block text-gray-dark">@{{ user }}</strong></a>
+                        <!-- Текст поста -->
+                        {{ post.text|linebreaksbr}}
                     </p>
-                {% endfor %}
-            </div>
-            {% if page.has_other_pages %}
-                {% include "paginator.html" with items=page paginator=paginator %}
-            {% endif %}
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="btn-group ">
+                            <!-- Ссылка на страницу записи в атрибуте href-->
+                            <a class="btn btn-sm text-muted" href="/{{user}}/{{forloop.counter0|add:page.start_index }}/" role="button">Добавить комментарий</a>
+                            <!-- Ссылка на редактирование, показывается только автору записи -->
+                            {% if request.user == post.author %}
+                                <a class="btn btn-sm text-muted" href="/{{user}}/{{forloop.counter0|add:page.start_index }}/edit" role="button">Редактировать</a>
+                            {% endif %}
+                        </div>
+                        <!-- Дата публикации  -->
+                        <small class="text-muted">{{ post.pub_date|date:"d M Y H:m" }}</small>
+                    </div>
+                    {% if not forloop.last %}<hr>{% endif %}
+                </div>
+                {% empty %}
+                <p class="card-body">
+                    Постов не найдено.
+                </p>
+            {% endfor %}
         </div>
+        {% if page.has_other_pages %}
+            {% include "paginator.html" with items=page paginator=paginator %}
+        {% endif %}
     </div>
+</div>
 {% endblock %}

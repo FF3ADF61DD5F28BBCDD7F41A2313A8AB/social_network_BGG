@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime as dt
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
@@ -146,7 +146,7 @@ class TestProfileCreate(TestCase):
         self.client.force_login(user)
         post = Post.objects.create(
             text=text,
-            pub_date=datetime.date.today(),
+            pub_date=dt.now(),
             author=user,
             group=None,
         )
@@ -169,7 +169,7 @@ class TestProfileCreate(TestCase):
         self.client.force_login(user)
         post = Post.objects.create(
             text=text,
-            pub_date=datetime.date.today(),
+            pub_date=dt.now(),
             author=user,
             group=None,
         )
@@ -188,3 +188,73 @@ class TestProfileCreate(TestCase):
         response = self.client.get(rf"/{self.username}/1/")
         self.assertContains(response, new_text)
         self.assertNotContains(response, text)
+
+    def test_page_not_found(self):
+        response = self.client.get("/yuiejfnhsadaywada/999999/")
+        self.assertEqual(response.status_code, 404)
+
+
+class TestImage(TestCase):
+    def setUp(self) -> None:
+        self.username = "LenaTest"
+        self.email = "testuser@ya.ru"
+        self.first_name = "Lena"
+        self.last_name = "Dubovenko"
+        self.password = "pa5ss1wor4d"
+        self.text = "Random text fialka"
+
+        self.user = User.objects.create_user(
+            username=self.username,
+            password=self.password,
+            first_name=self.first_name,
+            last_name=self.last_name,
+        )
+        self.group = Group.objects.create(
+            title="Иван Дрон",
+            slug="first_group2",
+            description="description first_group",
+        )
+        self.client.force_login(self.user)
+        with open("media/file.jpg", "rb") as img:
+            self.post = self.client.post(
+                "/new/",
+                {
+                    "author": self.user,
+                    "text": self.text,
+                    "group": self.group.id,
+                    "image": img,
+                },
+                follow=True,
+            )
+
+    def tearDown(self) -> None:
+        User.objects.all().delete()
+        Group.objects.all().delete()
+        Post.objects.all().delete()
+
+    def test_check_image_post(self):
+        response = self.client.get(rf"/{self.user.username}/1/")
+        self.assertContains(response, r"<img")
+
+    def test_check_image_of_page(self):
+        urls = ["/", f"/group/{self.group.slug}/", f"/{self.user}/"]
+        for url in urls:
+            response = self.client.get(url)
+            self.assertContains(response, r"<img")
+
+    def test_check_image_dowloand(self):
+        Post.objects.all().delete()
+        with open("media/test.txt", "rb") as img:
+            self.post = self.client.post(
+                "/new/",
+                {
+                    "author": self.user,
+                    "text": self.text,
+                    "group": self.group.id,
+                    "image": img,
+                },
+                follow=True,
+            )
+            response = self.client.get(f"/{self.user}/")
+            self.assertEqual(response.status_code, 200)
+            self.assertNotContains(response, r"<img")

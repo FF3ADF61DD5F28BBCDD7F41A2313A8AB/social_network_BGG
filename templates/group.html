@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load thumbnail %}
 {% block title %}Записи сообщеста {{ group }}{% endblock %}
 {% block header %}{% endblock %}
 {% block content %}
@@ -10,16 +11,19 @@
         <h3>
         Автор: {{ post.author.get_full_name }}, Дата публикации: {{ post.pub_date|date:"d M Y" }}
         </h3>
-        <p>{{ post.text|linebreaksbr }}</p>
-        {% if not forloop.last %}<hr>{% endif %}
-
-        {% empty %}
-        <h3>
-        Постов не найдено.
-        </h3>
-    {% endfor %}
-    {% if page.has_other_pages %}
-        {% include "paginator.html" with items=page paginator=paginator %}
-    {% endif %}
+        <div>
+            {% thumbnail post.image "340x340" crop="center" as im %}
+            <img src="{{ im.url }}" class="img-thumbnail" width="{{ im.width }}" height="{{ im.height }} ">
+        {% endthumbnail %}
+    </div>
+    <p>{{ post.text|linebreaksbr }}</p>
+    {% if not forloop.last %}<hr>{% endif %}
+    {% empty %}
+    <h3>
+    Постов не найдено.
+    </h3>
+{% endfor %}
+{% if page.has_other_pages %}
+    {% include "paginator.html" with items=page paginator=paginator %}
+{% endif %}
 {% endblock %}
-

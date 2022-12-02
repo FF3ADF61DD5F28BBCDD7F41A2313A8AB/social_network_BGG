@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load thumbnail %}
 {% block title %} {{ user.last_name }} {{ user.first_name }} {% endblock %}
-{% block header %}Профиль пользователя{% endblock %}
+{% block header %}Публикация пользователя{% endblock %}
 {% block content %}
     <div class="row">
         <div class="col-md-3 mb-3 mt-1">
@@ -22,8 +23,7 @@
                     </li>
                     <li class="list-group-item">
                         <div class="h6 text-muted">
-                            <!-- Количество записей -->
-                            Записей: {{count_all_posts}}
+                            Записей: {{ count_all_posts }}
                         </div>
                     </li>
                 </ul>
@@ -31,25 +31,33 @@
         </div>
         <div class="col-md-9">
             <div class="card mb-3 mt-1 shadow-sm">
-                    <div class="card-body">
-                        <p class="card-text">
-                            <!-- Ссылка на страницу автора в атрибуте href; username автора в тексте ссылки -->
-                            <a href="/{{ user }}/"><strong class="d-block text-gray-dark">@{{ user }}</strong></a>
-                            <!-- Текст поста -->
-                            {{ post.text|linebreaksbr}}
-                        </p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="btn-group ">
-                                {% if request.user == post.author %}
-                                    <a class="btn btn-sm text-muted" href="/{{user}}/{{ id }}/edit" role="button">Редактировать</a>
-                                {% endif %}
-                            </div>
-                            <!-- Дата публикации  -->
-                            <small class="text-muted">{{ post.pub_date|date:"d M Y H:m" }}</small>
-                        </div>
-                        {% if not forloop.last %}<hr>{% endif %}
+                {% thumbnail post.image "960" crop="center" upscale=True as im %}
+                <img class="card-img" src="{{ im.url }}">
+            {% endthumbnail %}
+            <div class="card-body">
+                <p class="card-text">
+                    <!-- Ссылка на страницу автора в атрибуте href; username автора в тексте ссылки -->
+                    <a href="/{{ user }}/"><strong class="d-block text-gray-dark">@
+                    {{ user }}</strong></a>
+                    <!-- Текст поста -->
+                    {{ post.text|linebreaksbr}}
+                </p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="btn-group ">
+                        {% if request.user == post.author %}
+                            <a class="btn btn-sm text-muted"
+                            href="/{{user}}/{{ id }}/edit" role="button">Редактировать</a>
+                        {% endif %}
                     </div>
+                    <!-- Дата публикации  -->
+                    <small class="text-muted">{{ post.pub_date|date:"d M Y H:m" }}</small>
+                </div>
+                <hr>
+                </div>
+                </div>
+            {% include "comments.html" %}
             </div>
         </div>
     </div>
+</div>
 {% endblock %}
