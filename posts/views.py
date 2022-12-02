@@ -1,5 +1,6 @@
 from datetime import datetime as dt
 
+from django.views.decorators.cache import cache_page
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -8,9 +9,9 @@ from django.contrib.auth.models import User
 from .models import Post, Group, Comment
 from .forms import PostForm, CommentForm
 
-
+@cache_page(20)
 def index(request):
-    post_list = (Post.objects.order_by("-pub_date").all().select_related())[:10]
+    post_list = Post.objects.order_by("-pub_date").all().select_related()
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get("page")
     page = paginator.get_page(page_number)
@@ -51,7 +52,7 @@ def new_post(request):
 
 def profile(request, username):
     user = get_object_or_404(User, username=username)
-    post_list = Post.objects.filter(author=user).all()
+    post_list = Post.objects.filter(author=user).all().select_related()
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get("page")
     page = paginator.get_page(page_number)
@@ -64,12 +65,8 @@ def profile(request, username):
 
 def post_view(request, username, post_id):
     user = get_object_or_404(User, username=username)
-    post = get_object_or_404(
-        Post.objects.filter(author=user)
-        .order_by("-pub_date")
-        .all()[post_id - 1 : post_id]
-    )
-    post_list = user.posts.all()
+    post = get_object_or_404(Post, author__username=username, pk=post_id)
+    post_list = user.posts.all().select_related("pk")
     count_all_posts = post_list.count()
     form = CommentForm(instance=None)
     items = Comment.objects.filter(post=post)
@@ -89,12 +86,7 @@ def post_view(request, username, post_id):
 
 @login_required()
 def add_comment(request, username, post_id):
-    user = get_object_or_404(User, username=username)
-    post = get_object_or_404(
-        Post.objects.filter(author=user)
-        .order_by("-pub_date")
-        .all()[post_id - 1 : post_id]
-    )
+    post = get_object_or_404(Post, author__username=username, pk=post_id)
     form = CommentForm(request.POST or None)
     if form.is_valid():
         comment = form.save(commit=False)
@@ -107,11 +99,7 @@ def add_comment(request, username, post_id):
 @login_required()
 def post_edit(request, username, post_id):
     user = get_object_or_404(User, username=username)
-    post = get_object_or_404(
-        Post.objects.filter(author=user)
-        .order_by("-pub_date")
-        .all()[post_id - 1 : post_id]
-    )
+    post = get_object_or_404(Post, author=user, pk=post_id)
     if post.author == request.user:
         form = PostForm(
             request.POST or None, files=request.FILES or None, instance=post

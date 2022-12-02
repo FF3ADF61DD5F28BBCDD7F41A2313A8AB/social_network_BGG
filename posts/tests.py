@@ -2,6 +2,7 @@ from datetime import datetime as dt
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.test import TestCase, Client
 from django.urls import reverse
 
@@ -136,6 +137,7 @@ class TestProfileCreate(TestCase):
         self.assertRedirects(response, "/auth/login/?next=/new/")
 
     def test_appearance_new_record(self):
+        cache.clear()
         text = "New world order"
         user = User.objects.create_user(
             username=self.username,
@@ -158,6 +160,7 @@ class TestProfileCreate(TestCase):
         self.assertContains(response, text)
 
     def test_correct_post_editing(self):
+        cache.clear()
         text = "New world order"
         new_text = "Alabama is not Russia"
         user = User.objects.create_user(
@@ -237,6 +240,7 @@ class TestImage(TestCase):
         self.assertContains(response, r"<img")
 
     def test_check_image_of_page(self):
+        cache.clear()
         urls = ["/", f"/group/{self.group.slug}/", f"/{self.user}/"]
         for url in urls:
             response = self.client.get(url)
@@ -258,3 +262,37 @@ class TestImage(TestCase):
             response = self.client.get(f"/{self.user}/")
             self.assertEqual(response.status_code, 200)
             self.assertNotContains(response, r"<img")
+
+class TestCache(TestCase):
+    def setUp(self) -> None:
+        self.username = "LenaTest"
+        self.email = "testuser@ya.ru"
+        self.first_name = "Lena"
+        self.last_name = "Dubovenko"
+        self.password = "pa5ss1wor4d"
+        user = User.objects.create_user(
+            username=self.username,
+            password=self.password,
+            first_name=self.first_name,
+            last_name=self.last_name,
+        )
+        self.client.force_login(user)
+        post = Post.objects.create(
+            text="oh my ZH",
+            pub_date=dt.now(),
+            author=user,
+            group=None,
+        )
+
+    def test_check_cache(self):
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "oh my ZH")
+        self.assertEqual(Post.objects.all().count(), 1)
+        Post.objects.all().delete()
+        response = self.client.get('/')
+        self.assertEqual(Post.objects.all().count(), 0)
+        self.assertContains(response, "oh my ZH")
+        cache.clear()
+        response = self.client.get('/')
+        self.assertNotContains(response, "oh my ZH")
