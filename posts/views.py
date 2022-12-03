@@ -6,8 +6,9 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.contrib.auth.models import User
 
-from .models import Post, Group, Comment
+from .models import Post, Group, Comment, Follow
 from .forms import PostForm, CommentForm
+
 
 @cache_page(20)
 def index(request):
@@ -48,19 +49,6 @@ def new_post(request):
     post.author = request.user
     post.save()
     return redirect("/")
-
-
-def profile(request, username):
-    user = get_object_or_404(User, username=username)
-    post_list = Post.objects.filter(author=user).all().select_related()
-    paginator = Paginator(post_list, 10)
-    page_number = request.GET.get("page")
-    page = paginator.get_page(page_number)
-    return render(
-        request,
-        "profile.html",
-        {"page": page, "paginator": paginator, "user": user},
-    )
 
 
 def post_view(request, username, post_id):
@@ -128,3 +116,69 @@ def page_not_found(request, exception):
 
 def server_error(request):
     return render(request, "misc/500.html", status=500)
+
+
+def profile(request, username):
+    user = get_object_or_404(User, username=username)
+    post_list = Post.objects.filter(author=user).all().select_related()
+    paginator = Paginator(post_list, 10)
+    page_number = request.GET.get("page")
+    page = paginator.get_page(page_number)
+    if (
+        Follow.objects.filter(user__username=request.user)
+        .filter(author__username=username)
+        .exists()
+    ):
+        flag_subscribe = True
+    else:
+        flag_subscribe = False
+    count_subscribers = Follow.objects.filter(author__username=username).count()
+    count_subscriptions = Follow.objects.filter(user__username=username).count()
+    return render(
+        request,
+        "profile.html",
+        {
+            "page": page,
+            "paginator": paginator,
+            "user": user,
+            "flag_subscribe": flag_subscribe,
+            "count_subscribers": count_subscribers,
+            "count_subscriptions": count_subscriptions,
+        },
+    )
+
+
+@login_required
+def follow_index(request):
+    post_list = Post.objects.filter(author__following__user=request.user)
+    if not post_list:
+        return render(
+            request,
+            "follow.html",
+            {},
+        )
+    paginator = Paginator(post_list, 10)
+    page_number = request.GET.get("page")
+    page = paginator.get_page(page_number)
+    return render(
+        request,
+        "follow.html",
+        {"page": page, "paginator": paginator},
+    )
+
+
+@login_required
+def profile_follow(request, username):
+    Follow.objects.create(
+        user=User.objects.get(username=request.user),
+        author=User.objects.get(username=username),
+    )
+    return redirect(f"/{username}/")
+
+
+@login_required
+def profile_unfollow(request, username):
+    Follow.objects.filter(user__username=request.user).filter(
+        author__username=username
+    ).delete()
+    return redirect(f"/{username}/")

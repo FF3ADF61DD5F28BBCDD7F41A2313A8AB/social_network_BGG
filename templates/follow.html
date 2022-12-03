@@ -3,8 +3,8 @@
 
 {% block content %}
     <div class="container">
-        {% include "menu.html" with index=True %}
-           <h1> Последние обновления на сайте</h1>
+        {% include "menu.html" with follow=True %}
+           <h1> Только подписки</h1>
             <!-- Вывод ленты записей -->
                 {% for post in page %}
                   <!-- Вот он, новый include! -->
