@@ -6,7 +6,7 @@ from django.core.cache import cache
 from django.test import TestCase, Client
 from django.urls import reverse
 
-from posts.models import Group, Post
+from posts.models import Group, Post, Follow
 
 
 class TestIndexPage(TestCase):
@@ -263,6 +263,7 @@ class TestImage(TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertNotContains(response, r"<img")
 
+
 class TestCache(TestCase):
     def setUp(self) -> None:
         self.username = "LenaTest"
@@ -284,15 +285,72 @@ class TestCache(TestCase):
             group=None,
         )
 
+        def tearDown(self) -> None:
+            User.objects.all().delete()
+            Post.objects.all().delete()
+
     def test_check_cache(self):
-        response = self.client.get('/')
+        response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "oh my ZH")
         self.assertEqual(Post.objects.all().count(), 1)
         Post.objects.all().delete()
-        response = self.client.get('/')
+        response = self.client.get("/")
         self.assertEqual(Post.objects.all().count(), 0)
         self.assertContains(response, "oh my ZH")
         cache.clear()
-        response = self.client.get('/')
+        response = self.client.get("/")
         self.assertNotContains(response, "oh my ZH")
+
+
+class TestFollow(TestCase):
+    def setUp(self) -> None:
+        self.username2 = "LenaTest2"
+        self.first_name2 = "Anna"
+        self.email2 = "testuser@ya2.ru"
+        self.username = "LenaTest"
+        self.first_name = "Lena"
+        self.last_name = "Dubovenko"
+        self.password = "pa5ss1wor4d"
+        self.user1 = User.objects.create_user(
+            username=self.username,
+            password=self.password,
+            first_name=self.first_name,
+            last_name=self.last_name,
+        )
+        self.user2 = User.objects.create_user(
+            username=self.username2,
+            password=self.password,
+            first_name=self.first_name2,
+            last_name=self.last_name,
+        )
+        self.post = Post.objects.create(
+            text="oh my ZH",
+            pub_date=dt.now(),
+            author=self.user2,
+            group=None,
+        )
+
+    def tearDown(self) -> None:
+        User.objects.all().delete()
+        Post.objects.all().delete()
+        Follow.objects.all().delete()
+
+    def test_authorized_subscription(self):
+        self.assertEqual(User.objects.all().count(), 2)
+        self.client.force_login(self.user1)
+        response = self.client.get(f"/follow/")
+        self.assertNotContains(response, "oh my ZH")
+        response = self.client.get(f"/{self.user2.username}/follow/")
+        self.assertEqual(Follow.objects.all().count(), 1)
+        response = self.client.get(f"/follow/")
+        self.assertContains(response, "oh my ZH")
+        response = self.client.get(f"/{self.user2.username}/unfollow/")
+        self.assertEqual(Follow.objects.all().count(), 0)
+
+    def test_comments(self):
+        response = self.client.get(f"/{self.user2.username}/1/comment/")
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(
+            response, f"/auth/login/?next=/{self.user2.username}/1/comment/"
+        )

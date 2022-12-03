@@ -92,7 +92,7 @@ def post_edit(request, username, post_id):
         form = PostForm(
             request.POST or None, files=request.FILES or None, instance=post
         )
-        if not form.is_valid():
+        if not form.is_valid() and request.method=="POST":
             return render(
                 request,
                 "new_post.html",
@@ -150,6 +150,7 @@ def profile(request, username):
 
 @login_required
 def follow_index(request):
+    # post_list = Post.objects.filter(author__follower__author=request.user)
     post_list = Post.objects.filter(author__following__user=request.user)
     if not post_list:
         return render(
